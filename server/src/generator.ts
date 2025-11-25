@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { Buffer } from 'buffer';
 import { SIGNATURES, CHUNK_SIZE, ZERO_BUFFER } from './constants';
 

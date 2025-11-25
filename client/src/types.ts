@@ -22,5 +22,4 @@ export interface GenerationConfig {
   filename?: string;
 }
 
-// Pointing to the backend server port
 export const API_BASE_URL = 'http://localhost:3000/api/v1';

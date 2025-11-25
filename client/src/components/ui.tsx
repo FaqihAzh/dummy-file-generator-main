@@ -1,9 +1,11 @@
 import React from 'react';
 
 // --- Card Components ---
-export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={`rounded-xl border bg-card text-card-foreground shadow-sm ${className || ''}`} {...props} />
-));
+export const Card = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 backdrop-blur text-zinc-100 shadow-2xl ${className}`} {...props}>
+    {children}
+  </div>
+);
 Card.displayName = "Card";
 
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
@@ -32,44 +34,41 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
 CardFooter.displayName = "CardFooter";
 
 // --- Input Components ---
-export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(({ className, type, ...props }, ref) => {
-  return (
+export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  ({ className = '', ...props }, ref) => (
     <input
-      type={type}
-      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all ${className || ''}`}
       ref={ref}
+      className={`flex h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-base text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-all ${className}`}
       {...props}
     />
-  );
-});
+  )
+);
 Input.displayName = "Input";
 
-export const Label = React.forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLLabelElement>>(({ className, ...props }, ref) => (
-  <label ref={ref} className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className || ''}`} {...props} />
-));
+export const Label = ({ className = '', ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
+  <label className={`text-sm font-medium text-zinc-300 ${className}`} {...props} />
+);
 Label.displayName = "Label";
 
-// --- Select (Simple Wrapper) ---
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-    options: { label: string; value: string }[];
-}
-
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({ className, options, ...props }, ref) => (
-    <div className="relative">
-        <select
-             className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none transition-all ${className || ''}`}
-             ref={ref}
-             {...props}
-        >
-            {options.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 opacity-50"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
+export const Select = ({ className = '', options, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { options: { label: string; value: string }[] }) => (
+  <div className="relative">
+    <select
+      className={`flex h-11 w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-base text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-all ${className}`}
+      {...props}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400">
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
     </div>
-));
+  </div>
+);
 Select.displayName = "Select";
 
 
@@ -80,32 +79,24 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isLoading?: boolean;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant = 'default', size = 'default', isLoading, children, ...props }, ref) => {
-  const variants = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-    destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-    outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    link: "text-primary underline-offset-4 hover:underline",
-  };
-  const sizes = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10",
-  };
-  
-  return (
-    <button
-      className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className || ''}`}
-      ref={ref}
-      disabled={props.disabled || isLoading}
-      {...props}
-    >
-      {isLoading && <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-      {children}
-    </button>
-  );
-});
+export const Button = ({ 
+  className = '', 
+  isLoading = false, 
+  children, 
+  ...props 
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { isLoading?: boolean }) => (
+  <button
+    className={`inline-flex h-11 items-center justify-center rounded-lg bg-zinc-100 px-6 text-sm font-medium text-zinc-900 hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${className}`}
+    disabled={isLoading || props.disabled}
+    {...props}
+  >
+    {isLoading && (
+      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    )}
+    {children}
+  </button>
+);
 Button.displayName = "Button";
