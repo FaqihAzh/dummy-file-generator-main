@@ -1,6 +1,5 @@
 import React from 'react';
 
-// --- Card Components ---
 export const Card = ({ className = '', children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 backdrop-blur text-zinc-100 shadow-2xl ${className}`} {...props}>
     {children}
@@ -33,7 +32,6 @@ export const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
 ));
 CardFooter.displayName = "CardFooter";
 
-// --- Input Components ---
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   ({ className = '', ...props }, ref) => (
     <input
@@ -72,7 +70,6 @@ export const Select = ({ className = '', options, ...props }: React.SelectHTMLAt
 Select.displayName = "Select";
 
 
-// --- Button ---
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';

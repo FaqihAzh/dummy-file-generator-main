@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Download, FileWarning, Zap, HardDrive, CheckCircle2 } from 'lucide-react';
 import { Card, Input, Label, Select, Button } from './components/ui';
-import { FileType, FileUnit, API_BASE_URL } from './types'; // Pastikan API_BASE_URL ada di types.ts
-import { calculateTotalBytes, formatBytes } from './utils';
+import { FileType, FileUnit } from './types';
+import { calculateTotalBytes, formatBytes, generateFile } from './utils';
 
 const App: React.FC = () => {
   const [size, setSize] = useState<number>(10);
@@ -24,26 +24,26 @@ const App: React.FC = () => {
       return;
     }
 
+    // Check if size is too large (over 500MB)
+    if (totalBytes > 500 * 1024 * 1024) {
+      setError("File size too large. Maximum is 500MB for browser generation.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Nama file final
+      // Simulate a small delay for UX
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const finalFilename = filename.trim() || `dummy_${totalBytes}_bytes.${fileType}`;
-      
-      // --- PERBAIKAN UTAMA: DIRECT LINK ---
-      // Jangan pakai fetch()! Pakai URL langsung agar browser menghandle download stream.
-      const downloadUrl = `${API_BASE_URL}/generate?size=${totalBytes}&type=${fileType}&name=${encodeURIComponent(finalFilename)}`;
-      
-      console.log("Navigating to:", downloadUrl);
-      
-      // Ini akan memicu dialog download browser
-      window.location.href = downloadUrl;
+      generateFile(totalBytes, fileType, finalFilename);
       
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error(err);
-      setError("Gagal memulai download.");
+      setError("Failed to generate file. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +69,7 @@ const App: React.FC = () => {
         {/* Main Card */}
         <Card>
           <div className="p-6 space-y-6">
+            {/* Header with icon */}
             <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
               <div className="h-10 w-10 rounded-lg bg-zinc-800 flex items-center justify-center">
                 <HardDrive className="h-5 w-5 text-zinc-300" />
@@ -79,6 +80,7 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            {/* Form */}
             <div className="space-y-5">
               {/* Size Input */}
               <div className="grid grid-cols-3 gap-3">
@@ -121,8 +123,8 @@ const App: React.FC = () => {
                     { label: 'Word Document (.docx)', value: FileType.DOCX },
                     { label: 'Excel Spreadsheet (.xlsx)', value: FileType.XLSX },
                     { label: 'PowerPoint (.pptx)', value: FileType.PPTX },
-                    { label: 'JPEG Image (.jpg)', value: FileType.JPG },
-                    { label: 'MP3 Audio (.mp3)', value: FileType.MP3 },
+                    // { label: 'JPEG Image (.jpg)', value: FileType.JPG },
+                    // { label: 'MP3 Audio (.mp3)', value: FileType.MP3 },
                     { label: 'Text File (.txt)', value: FileType.TXT },
                   ]}
                 />
@@ -139,6 +141,7 @@ const App: React.FC = () => {
                 />
               </div>
 
+              {/* Summary Box */}
               <div className="rounded-lg bg-zinc-800/50 border border-zinc-700 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-zinc-400">Formatted Size</span>
@@ -151,6 +154,7 @@ const App: React.FC = () => {
                 </div>
               </div>
 
+              {/* Error Message */}
               {error && (
                 <div className="flex items-center gap-3 text-sm text-red-400 bg-red-950/30 border border-red-900/50 p-3 rounded-lg">
                   <FileWarning className="h-4 w-4 shrink-0" />
@@ -158,27 +162,30 @@ const App: React.FC = () => {
                 </div>
               )}
 
+              {/* Success Message */}
               {success && (
                 <div className="flex items-center gap-3 text-sm text-green-400 bg-green-950/30 border border-green-900/50 p-3 rounded-lg">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  <span>Request sent! Downloading...</span>
+                  <span>File generated successfully!</span>
                 </div>
               )}
             </div>
 
+            {/* Download Button */}
             <Button 
               className="w-full h-12 text-base font-semibold"
               onClick={handleDownload} 
               isLoading={isLoading}
             >
               {!isLoading && <Download className="mr-2 h-5 w-5" />}
-              {isLoading ? 'Processing...' : 'Generate & Download'}
+              {isLoading ? 'Generating...' : 'Generate & Download'}
             </Button>
           </div>
         </Card>
-        
+
+        {/* Info Footer */}
         <div className="text-center text-xs text-zinc-500 px-4">
-          Powered by Node.js Streams. Capable of generating multi-GB files.
+          Files are generated client-side in your browser. No server required.
         </div>
       </div>
     </div>

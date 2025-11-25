@@ -10,8 +10,8 @@ export enum FileType {
   DOCX = 'docx',
   XLSX = 'xlsx',
   PPTX = 'pptx',
-  JPG = 'jpg',
-  MP3 = 'mp3',
+  // JPG = 'jpg',
+  // MP3 = 'mp3',
   TXT = 'txt'
 }
 
