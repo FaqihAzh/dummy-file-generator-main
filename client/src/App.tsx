@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Download, FileWarning, Zap, HardDrive, CheckCircle2 } from 'lucide-react';
 import { Card, Input, Label, Select, Button } from './components/ui';
 import { FileType, FileUnit } from './types';
-import { calculateTotalBytes, formatBytes, generateFile } from './utils';
+import { calculateTotalBytes, ensureExtension, formatBytes, generateFile } from './utils';
 
 const App: React.FC = () => {
   const [size, setSize] = useState<number>(10);
@@ -36,9 +36,12 @@ const App: React.FC = () => {
       // Simulate a small delay for UX
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      const finalFilename = filename.trim() || `dummy_${totalBytes}_bytes.${fileType}`;
-      generateFile(totalBytes, fileType, finalFilename);
-      
+      const finalFilename = ensureExtension(
+        filename.trim() || `dummy_${totalBytes}_bytes`,
+        fileType
+      );
+
+      generateFile(totalBytes, fileType, finalFilename);      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

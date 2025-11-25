@@ -1,49 +1,80 @@
-import { FileType, FileUnit } from "./types";
+import { FileType } from "./types";
 
-export const calculateTotalBytes = (size: number, unit: FileUnit): number => {
-  const multipliers: Record<FileUnit, number> = {
-    [FileUnit.B]: 1,
-    [FileUnit.KB]: 1024,
-    [FileUnit.MB]: 1024 * 1024,
-    [FileUnit.GB]: 1024 * 1024 * 1024,
-  };
-  return Math.floor(size * multipliers[unit]);
-};
+// Auto-fix extension
+export function ensureExtension(name: string, fileType: FileType): string {
+  const ext = `.${fileType}`;
+  if (!name.toLowerCase().endsWith(ext)) {
+    return name + ext;
+  }
+  return name;
+}
 
-export const formatBytes = (bytes: number, decimals = 2): string => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-};
+export function calculateTotalBytes(size: number, unit: string): number {
+  switch (unit) {
+    case "B": return size;
+    case "KB": return size * 1024;
+    case "MB": return size * 1024 * 1024;
+    case "GB": return size * 1024 * 1024 * 1024;
+    default: return size;
+  }
+}
 
-export const getFileSignature = (type: FileType): Uint8Array => {
-  const signatures: Record<FileType, number[]> = {
-    [FileType.PDF]: [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x35, 0x0A], 
-    [FileType.DOCX]: [0x50, 0x4B, 0x03, 0x04],
-    [FileType.XLSX]: [0x50, 0x4B, 0x03, 0x04],
-    [FileType.PPTX]: [0x50, 0x4B, 0x03, 0x04],
-    [FileType.TXT]: [],
-  };
-  return new Uint8Array(signatures[type]);
-};
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return bytes + " B";
+  const units = ["KB", "MB", "GB"];
+  let i = -1;
+  do {
+    bytes /= 1024;
+    i++;
+  } while (bytes >= 1024 && i < units.length - 1);
+  return bytes.toFixed(2) + " " + units[i];
+}
 
-export const generateFile = (size: number, type: FileType, filename: string) => {
-  const signature = getFileSignature(type);
-  const signatureSize = signature.length;
-  
-  const fileData = new Uint8Array(size);
-  fileData.set(signature, 0);
-  
-  const blob = new Blob([fileData], { type: 'application/octet-stream' });
+// MAIN GENERATOR USING TEMPLATE (non-corrupt)
+export async function generateFile(totalBytes: number, fileType: FileType, filename: string) {
+  const templatePath = `./assets/templates/template.${fileType}`;
+
+  // load base template file
+  const baseBuffer = await fetch(templatePath).then(r => r.arrayBuffer());
+  const baseBytes = new Uint8Array(baseBuffer);
+
+  // compute padding needed
+  const remaining = totalBytes - baseBytes.length;
+
+  const chunks: Uint8Array[] = [];
+  chunks.push(baseBytes);
+
+  // add dummy padding bytes
+  if (remaining > 0) {
+    const chunkSize = 1024 * 64; // 64KB chunks
+    let created = 0;
+
+    while (created < remaining) {
+      const s = Math.min(chunkSize, remaining - created);
+      chunks.push(new Uint8Array(s)); // zero-filled chunk
+      created += s;
+    }
+  }
+
+  const blob = new Blob(chunks, { type: getMime(fileType) });
+
+  // trigger download
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename || `dummy_${size}_bytes.${type}`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
   URL.revokeObjectURL(url);
-};
+}
+
+// MIME types
+function getMime(ext: FileType) {
+  switch (ext) {
+    case "pdf": return "application/pdf";
+    case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    case "pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    default: return "text/plain";
+  }
+}
