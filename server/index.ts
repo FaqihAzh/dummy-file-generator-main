@@ -8,9 +8,8 @@
  * 4. Run: `npx ts-node index.ts`
  */
 
-import express, { Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
-import { IncomingMessage, ServerResponse } from 'http';
 import { Buffer } from 'buffer';
 
 const app = express();
