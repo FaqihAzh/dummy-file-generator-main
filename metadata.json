@@ -1,0 +1,5 @@
+{
+  "name": "Copy of ByteSmith Generator",
+  "description": "A high-precision dummy file generator for network testing. Generates byte-perfect files via Node.js streams to test upload limits and timeouts.",
+  "requestFramePermissions": []
+}
