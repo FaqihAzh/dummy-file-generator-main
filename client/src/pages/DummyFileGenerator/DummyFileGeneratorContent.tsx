@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Download, FileWarning, Zap, HardDrive, CheckCircle2 } from 'lucide-react';
+import { Download, FileWarning, Zap, HardDrive, CheckCircle2, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Input, Label, Select, Button } from '../../components/ui';
 import { FileType, FileUnit } from '../../lib/types';
 import { calculateTotalBytes, ensureExtension, formatBytes, generateFile, MIN_FILE_SIZES } from '../../lib/utils';
 
 const DummyFileGeneratorContent: React.FC = () => {
+  const navigate = useNavigate();
   const [size, setSize] = useState<string>('10');
   const [unit, setUnit] = useState<FileUnit>(FileUnit.MB);
   const [fileType, setFileType] = useState<FileType>(FileType.PDF);
@@ -80,6 +82,14 @@ const DummyFileGeneratorContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-zinc-950">
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/')}
+        className="fixed top-6 left-6 p-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all duration-200 group"
+      >
+        <Home className="h-5 w-5" />
+      </button>
+
       <div className="max-w-md w-full space-y-8">
         <div className="text-center space-y-4">
           <div className="flex justify-center">
@@ -131,7 +141,6 @@ const DummyFileGeneratorContent: React.FC = () => {
                       { label: 'Bytes', value: FileUnit.B },
                       { label: 'KB', value: FileUnit.KB },
                       { label: 'MB', value: FileUnit.MB },
-                      // { label: 'GB', value: FileUnit.GB },
                     ]}
                   />
                 </div>
