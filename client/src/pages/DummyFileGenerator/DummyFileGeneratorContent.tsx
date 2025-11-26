@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Download, FileWarning, Zap, HardDrive, CheckCircle2 } from 'lucide-react';
 import { Card, Input, Label, Select, Button } from '../../components/ui';
 import { FileType, FileUnit } from '../../lib/types';
-import { calculateTotalBytes, ensureExtension, formatBytes, generateFile } from '../../lib/utils';
+import { calculateTotalBytes, ensureExtension, formatBytes, generateFile, MIN_FILE_SIZES } from '../../lib/utils';
 
 const DummyFileGeneratorContent: React.FC = () => {
   const [size, setSize] = useState<string>('10');
@@ -22,13 +22,19 @@ const DummyFileGeneratorContent: React.FC = () => {
   useEffect(() => {
     const fetchMinSize = async () => {
       try {
+        const minSizeFromConfig = MIN_FILE_SIZES[fileType];
+        
         const templatePath = `/templates/template.${fileType}`;
         const res = await fetch(templatePath);
-        if (!res.ok) throw new Error('Template not found');
-        const buffer = await res.arrayBuffer();
-        setMinBytes(buffer.byteLength);
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const templateSize = buffer.byteLength;
+          setMinBytes(Math.max(minSizeFromConfig, templateSize));
+        } else {
+          setMinBytes(minSizeFromConfig);
+        }
       } catch {
-        setMinBytes(0);
+        setMinBytes(MIN_FILE_SIZES[fileType]);
       }
     };
     fetchMinSize();
@@ -125,7 +131,7 @@ const DummyFileGeneratorContent: React.FC = () => {
                       { label: 'Bytes', value: FileUnit.B },
                       { label: 'KB', value: FileUnit.KB },
                       { label: 'MB', value: FileUnit.MB },
-                      { label: 'GB', value: FileUnit.GB },
+                      // { label: 'GB', value: FileUnit.GB },
                     ]}
                   />
                 </div>

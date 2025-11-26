@@ -1,4 +1,13 @@
+import JSZip from "jszip";
 import { FileType } from "./types";
+
+export const MIN_FILE_SIZES: Record<FileType, number> = {
+  [FileType.PPTX]: 100 * 1024,      
+  [FileType.XLSX]: 15 * 1024,       
+  [FileType.DOCX]: 15 * 1024,       
+  [FileType.PDF]: 10 * 1024,        
+  [FileType.TXT]: 5 * 1024,                
+};
 
 export function ensureExtension(name: string, fileType: FileType): string {
   const ext = `.${fileType}`;
@@ -30,7 +39,14 @@ export function formatBytes(bytes: number): string {
 }
 
 export async function generateFile(totalBytes: number, fileType: FileType, filename: string) {
-  
+  // Validasi minimal ukuran file
+  const minSize = MIN_FILE_SIZES[fileType];
+  if (totalBytes < minSize) {
+    throw new Error(
+      `Ukuran terlalu kecil! Minimal ukuran untuk file .${fileType} adalah ${formatBytes(minSize)}.`
+    );
+  }
+
   if (fileType === FileType.TXT) {
     const buffer = new Uint8Array(totalBytes);
     buffer.fill(120); 
@@ -72,15 +88,20 @@ export async function generateFile(totalBytes: number, fileType: FileType, filen
     );
   }
 
-  const remaining = totalBytes - baseBytes.length;
+  // Untuk file Office (docx, xlsx, pptx), kita perlu memodifikasi struktur ZIP internal
+  if (fileType === FileType.DOCX || fileType === FileType.XLSX || fileType === FileType.PPTX) {
+    await generateOfficeFile(baseBytes, totalBytes, fileType, filename);
+    return;
+  }
 
+  // Untuk file lainnya (PDF), lakukan padding seperti biasa
+  const remaining = totalBytes - baseBytes.length;
   const chunks: Uint8Array[] = [];
   chunks.push(baseBytes);
 
   if (remaining > 0) {
     const chunkSize = 1024 * 1024; 
     let created = 0;
-    
     const zeroBuffer = new Uint8Array(chunkSize); 
 
     while (created < remaining) {
@@ -96,6 +117,79 @@ export async function generateFile(totalBytes: number, fileType: FileType, filen
 
   const blob = new Blob(chunks, { type: getMime(fileType) });
   triggerDownload(blob, filename);
+}
+
+async function generateOfficeFile(baseBytes: Uint8Array, totalBytes: number, fileType: FileType, filename: string) {
+  try {
+    const zip = await JSZip.loadAsync(baseBytes);
+    
+    const targetSize = totalBytes;
+    
+    const testBlob = await zip.generateAsync({
+      type: "blob",
+      compression: "STORE"
+    });
+    
+    const currentSize = testBlob.size;
+    const remaining = targetSize - currentSize;
+    
+    if (remaining > 0) {
+      let paddingSize = remaining;
+      let iterationCount = 0;
+      const maxIterations = 5;
+      
+      while (iterationCount < maxIterations) {
+        if (zip.file("_bytesmith_padding.dat")) {
+          zip.remove("_bytesmith_padding.dat");
+        }
+        
+        const paddingData = new Uint8Array(Math.max(0, paddingSize));
+        for (let i = 0; i < paddingData.length; i++) {
+          paddingData[i] = i % 256;
+        }
+        
+        zip.file("_bytesmith_padding.dat", paddingData, {
+          compression: "STORE"
+        });
+        
+        const newBlob = await zip.generateAsync({
+          type: "blob",
+          compression: "STORE"
+        });
+        
+        const newSize = newBlob.size;
+        const diff = targetSize - newSize;
+        
+        if (Math.abs(diff) <= 5) {
+          triggerDownload(newBlob, filename);
+          return;
+        }
+        
+        paddingSize += diff;
+        iterationCount++;
+      }
+      
+      const finalBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "STORE",
+        mimeType: getMime(fileType)
+      });
+      
+      triggerDownload(finalBlob, filename);
+    } else {
+      const blob = await zip.generateAsync({
+        type: "blob",
+        compression: "STORE",
+        mimeType: getMime(fileType)
+      });
+      
+      triggerDownload(blob, filename);
+    }
+    
+  } catch (error) {
+    console.error("Error generating Office file:", error);
+    throw new Error(`Gagal generate file ${fileType}: ${error}`);
+  }
 }
 
 function triggerDownload(blob: Blob, filename: string) {
@@ -118,4 +212,3 @@ function getMime(ext: FileType) {
     default: return "text/plain";
   }
 }
-
